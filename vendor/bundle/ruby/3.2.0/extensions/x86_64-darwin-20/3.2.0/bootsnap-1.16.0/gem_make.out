@@ -1,0 +1,18 @@
+current directory: /Users/Diogo/WebDevelopment/wtree/dapp/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.16.0/ext/bootsnap
+/Users/Diogo/.rbenv/versions/3.2.0/bin/ruby -I /Users/Diogo/.rbenv/versions/3.2.0/lib/ruby/3.2.0 extconf.rb
+creating Makefile
+
+current directory: /Users/Diogo/WebDevelopment/wtree/dapp/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.16.0/ext/bootsnap
+make DESTDIR\= sitearchdir\=./.gem.20230208-84899-ail6ce sitelibdir\=./.gem.20230208-84899-ail6ce clean
+
+current directory: /Users/Diogo/WebDevelopment/wtree/dapp/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.16.0/ext/bootsnap
+make DESTDIR\= sitearchdir\=./.gem.20230208-84899-ail6ce sitelibdir\=./.gem.20230208-84899-ail6ce
+compiling bootsnap.c
+linking shared-object bootsnap/bootsnap.bundle
+
+current directory: /Users/Diogo/WebDevelopment/wtree/dapp/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.16.0/ext/bootsnap
+make DESTDIR\= sitearchdir\=./.gem.20230208-84899-ail6ce sitelibdir\=./.gem.20230208-84899-ail6ce install
+/usr/local/bin/ginstall -c -m 0755 bootsnap.bundle ./.gem.20230208-84899-ail6ce/bootsnap
+
+current directory: /Users/Diogo/WebDevelopment/wtree/dapp/vendor/bundle/ruby/3.2.0/gems/bootsnap-1.16.0/ext/bootsnap
+make DESTDIR\= sitearchdir\=./.gem.20230208-84899-ail6ce sitelibdir\=./.gem.20230208-84899-ail6ce clean
