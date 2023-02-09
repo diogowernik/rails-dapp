@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
-// import { ethers } from "ethers";
+import { ethers } from "ethers";
 
 // variables to store data
 let walletConnected = false;
@@ -45,7 +45,7 @@ export default class extends Controller {
   }
 
   async syncComponents(accounts) {
-    // provider = new ethers.providers.Web3Provider(window.ethereum);
+    provider = new ethers.providers.Web3Provider(window.ethereum);
 
     if (accounts.length > 0) {
       walletConnected = true;
@@ -63,9 +63,10 @@ export default class extends Controller {
         6
       )}...${userAddress.slice(-3)}`.toUpperCase(); 
       
-      // userBalance = await provider.getBalance(userAddress);
-      // userBalance = ethers.utils.formatEther(userBalance);
-      // this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
+      userBalance = await provider.getBalance(userAddress);
+      userBalance = ethers.utils.formatEther(userBalance);
+      this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
+      console.log("your balance is: " + userBalance + " ETH")
       
 
 
