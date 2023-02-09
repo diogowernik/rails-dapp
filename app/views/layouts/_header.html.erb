@@ -9,15 +9,23 @@
             </span>
           </div>
           <!-- Wallet -->
-          <div class="flex items-center">
-            <%=image_tag "ethereum.png", class: "mr-1 h-5 w5" %>
-            <p class="mr-5 font-semibold text-slate-500">
-              0.0455
-            </p>
-            <p class="mr-5 font-semibold text-slate-500">
-              0xE5BC...78A
-            </p>
-
+          <div 
+            hidden
+            data-metamask-target="wallet"
+          >
+            <div class="flex items-center">
+              <%=image_tag "ethereum.png", class: "mr-1 h-5 w5" %>
+              <p 
+                data-metamask-target="balance"
+                class="mr-5 font-semibold text-slate-500"
+              >
+              </p>
+              <p 
+                data-metamask-target="address"
+                class="mr-5 font-semibold text-slate-500"
+              >
+              </p>
+            </div>
           </div>
         </div>
       </div>
