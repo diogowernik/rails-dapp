@@ -3,7 +3,8 @@ import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
 
 // contract on goerli that i deployed 0x5CFE10e919EE71274c971512514C94BfA78C923a
-const CONTRACT_ADDRESS = "0x5CFE10e919EE71274c971512514C94BfA78C923a";
+// new contract on golerli 0x4857CF33924d60614b144D11d5c22EeF766895D8
+const CONTRACT_ADDRESS = "0x4857CF33924d60614b144D11d5c22EeF766895D8";
 const CONTRACT_ABI = abi.abi;
 
 // variables to store data
@@ -83,8 +84,6 @@ export default class extends Controller {
     }
   }
 
-
-
   async syncComponents(accounts) {
     provider = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -139,7 +138,6 @@ export default class extends Controller {
     item.querySelector(".message").innerText = message; 
     this.notificationTarget.hidden = false;
   }
-
 
   async buyCoffee() {
     try {
