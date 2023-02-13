@@ -1,0 +1,42 @@
+<div id="<%= dom_id coffee %>">
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Author:</strong>
+    <%= coffee.author_id %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Sender wallet address:</strong>
+    <%= coffee.sender_wallet_address %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Name:</strong>
+    <%= coffee.name %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Amount:</strong>
+    <%= coffee.amount %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Timestamp:</strong>
+    <%= coffee.timestamp %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Message:</strong>
+    <%= coffee.message %>
+  </p>
+
+  <p class="my-5">
+    <strong class="block font-medium mb-1">Tx hash:</strong>
+    <%= coffee.tx_hash %>
+  </p>
+
+  <% if action_name != "show" %>
+    <%= link_to "Show this coffee", coffee, class: "rounded-lg py-3 px-5 bg-gray-100 inline-block font-medium" %>
+    <%= link_to 'Edit this coffee', edit_coffee_path(coffee), class: "rounded-lg py-3 ml-2 px-5 bg-gray-100 inline-block font-medium" %>
+    <hr class="mt-6">
+  <% end %>
+</div>

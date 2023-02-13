@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  author_id: 1
+  sender_wallet_address: MyString
+  name: MyString
+  amount: 9.99
+  timestamp: 2023-02-13 14:03:00
+  message: MyText
+  tx_hash: MyString
+
+two:
+  author_id: 1
+  sender_wallet_address: MyString
+  name: MyString
+  amount: 9.99
+  timestamp: 2023-02-13 14:03:00
+  message: MyText
+  tx_hash: MyString
