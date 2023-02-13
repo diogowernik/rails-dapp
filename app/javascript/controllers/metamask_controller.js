@@ -14,8 +14,10 @@ let userBalance = null;
 let provider = null;
 let contract = null;
 let transactions = [];
+let authorWalletAddress = "0x5FF047E05f8D0c7f2747F86F744d2B18df16F3D2";
+let senderWalletAddress = null;
 
-// Connects to data-controller="metamask"
+
 export default class extends Controller {
   static targets = [
     "connect",
@@ -23,8 +25,9 @@ export default class extends Controller {
     "results",
     "form",
     "address",
+    "authorWalletAddress",
+    "senderWalletAddress",
     "balance",
-    "name",
     "message",
     "price",
     "notification",
@@ -64,22 +67,6 @@ export default class extends Controller {
         provider.getSigner()
       );
 
-      // Check if the current user is the contract's owner or not
-      const contractOwner = await contract.owner();
-      const userAddress = await provider.getSigner().getAddress();
-      
-      
-      const isOwner = contractOwner === userAddress;
-    
-        
-
-      console.log("isOwner: ", isOwner);
-
-      if (isOwner) {
-        await this.getContractBalance();
-        this.withdrawTarget.hidden = false;
-      }
-
       console.log("Contract is set up successfully", contract);
     }
   }
@@ -110,8 +97,8 @@ export default class extends Controller {
 
       await this.setupContract();
       
-      // Fetch all cofee in the blockchain
-      this.getAllCoffee();
+      // Fetch all cofee in the blockchain by author
+
 
 
       // metamask event: reload page if account changes
@@ -141,28 +128,34 @@ export default class extends Controller {
 
   async buyCoffee() {
     try {
-      const name = this.nameTarget.value;
+      const authorWalletAddress = this.authorWalletAddress;
+      const senderWalletAddress = this.senderWalletAddress;
+      const amount = this.amount;
+      const timestamp = this.timestamp;
       const message = this.messageTarget.value;
-      // get price from button text
-      const price = this.priceTarget.innerText;
       // execute transaction
-      const transaction = await contract.buyCoffee(
-        name ? name : "Anonymous", 
-        message ? message : "Enjoy your coffee!", 
-        {value: ethers.utils.parseEther(price)}
+      const transaction = await contract.buymeacoffee(
+        authorWalletAddress, 
+        senderWalletAddress ? senderWalletAddress : userAddress, 
+        amount, 
+        timestamp, 
+        message ? message : "Enjoy your coffee!"
         );
 
+      // set sender wallet address to user address
+      this.senderWalletAddress = userAddress;
+  
       // Disable form
       this.formTarget.classList.add("pointer-events-none");
-
+  
       // Show notification
       this.showNotification("Processing...", "We are almost there.");
-
+  
       // console.log("Processing...", transaction.hash);
       await transaction.wait();
       // alert("Transaction successful!");
       this.showNotification("Success", "Your coffee is on its way!");
-
+  
       // reload the whole page
       window.location.reload();
     }
@@ -171,6 +164,7 @@ export default class extends Controller {
       alert("Transaction failed!");
     }
   }
+  
 
   async getAllCoffee() {
     try {
@@ -240,7 +234,6 @@ export default class extends Controller {
       "en-US"
     );
 
-    item.querySelector(".supporter").innerText = txn.name;
     item.querySelector(".message").innerText = txn.message;
     item.querySelector(".price").innerText = `supported ${tx_eth} ETH`;
     item.querySelector(".address").innerText = tx_address;
