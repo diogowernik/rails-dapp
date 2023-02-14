@@ -21,7 +21,7 @@ export default class extends Controller {
   static targets = [
     "connect",
     "wallet",
-    // "results",
+    "results",
     "form",
     "address",
     "balance",
@@ -95,7 +95,7 @@ export default class extends Controller {
       this.connectTarget.hidden = true;
       // show elements
       this.walletTarget.hidden = false;
-      // this.resultsTarget.hidden = false;
+      this.resultsTarget.hidden = false;
       this.formTarget.hidden = false;
 
       this.addressTarget.innerText = `${userAddress.slice(
@@ -108,19 +108,18 @@ export default class extends Controller {
       this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
       console.log("your balance is: " + userBalance + " ETH")
 
-      // get all coffee transactions
-      await this.getAllCoffee();
-      await this.getContractBalance();
-
-
       await this.setupContract();
+
+      // get all coffee transactions
+      transactions = await contract.getAllCoffee();
+      console.log(transactions);
+
+     
 
       // metamask event: reload page if account changes
       window.ethereum.on("accountsChanged", (accounts) => {
         window.location.reload();
       });
-
-
 
     } else {
       walletConnected = false;
@@ -129,7 +128,7 @@ export default class extends Controller {
       this.connectTarget.hidden = false;
       // hide elements
       this.walletTarget.hidden = true;
-      // this.resultsTarget.hidden = true;
+      this.resultsTarget.hidden = true;
       this.formTarget.hidden = true;
       this.addressTarget.innerText = "";
     }
@@ -196,11 +195,11 @@ export default class extends Controller {
 
   async getContractBalance() {
     try {
-      let contractBalance = await contract.getContractBalance();
+      let contractBalance = await contract.getBalance();
       contractBalance = ethers.utils.formatEther(contractBalance);
       contractBalance = Math.round(contractBalance * 10000) / 10000;
 
-      console.log("Contract's balance: ", contractBalance);
+      // console.log("Contract's balance: ", contractBalance);
 
       if (contractBalance > 0) {
         this.withdrawTarget.innerText = `Withdraw ${contractBalance} ETH`;
@@ -232,7 +231,7 @@ export default class extends Controller {
     item.querySelector(".address").innerText = tx_address;
     item.querySelector(".timestamp").innerText = tx_date;
 
-    // this.resultsTarget.append(item);
+    this.resultsTarget.append(item);
   }
 
   
