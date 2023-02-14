@@ -1,0 +1,50 @@
+<div class="w-full max-w-sm" x-data="{price: 0.001}">
+  <div class="box-border border border-gray-200 shadow-md rounded px-8 py-6">
+    <h1 class="font-semibold text-lg mb-4">
+      Buy <span class="text-orange-500">Diogo Wernik</span> a coffee
+    </h1>
+    <!-- Button: Connect to Metamask -->
+    <button 
+      data-metamask-target="connect" 
+      data-action="metamask#connectMetamask"
+      hidden 
+      class="mt-5 w-full rounded-md py-3 bg-black text-white font-semibold hover:scale-105 duration-300">
+      <div class="flex items-center justify-center">
+        Connect to <%= image_tag "metamask.png", class: "ml-2 h-6 w-6" %>
+      </div>
+    </button>
+    <!-- Form: Buymeacoffee -->
+    <div 
+    hidden 
+    data-metamask-target="form">
+      <!-- Tabs: Coffee -->
+      <div class="w-full flex items-center justify-evenly space-x-2 rounded-md border border-orange-200 bg-orange-500/10 px-2 py-5 mb-5">
+        <span class="text-4xl">☕</span>
+        <span class="text-gray-400 font-semibold">X</span>
+        <div>
+          <input type="radio" name="option" id="opt1" class="peer hidden" checked />
+          <label @click="price=0.001" for="opt1" class="coffee-choice">1</label>
+        </div>
+        <div>
+          <input type="radio" name="option" id="opt2" class="peer hidden" />
+          <label @click="price=0.003" for="opt2" class="coffee-choice">3</label>
+        </div>
+        <div>
+          <input type="radio" name="option" id="opt3" class="peer hidden" />
+          <label @click="price=0.005" for="opt3" class="coffee-choice">5</label>
+        </div>
+      </div>
+      <!-- Input: profileAdress = @author.wallet_address -->
+      <input 
+        data-metamask-target="profileAddress"
+        type="hidden"   
+        name="profileAddress" 
+        value="<%= @author.wallet_address %>"
+      >
+      <!-- Button: Support -->
+      <button data-action="metamask#buyCoffee" class="btn btn-support">
+        Support <span data-metamask-target="price" x-text="price"></span> ETH
+      </button>
+    </div>
+  </div>
+</div>

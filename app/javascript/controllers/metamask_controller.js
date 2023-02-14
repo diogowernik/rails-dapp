@@ -2,9 +2,10 @@ import { Controller } from "@hotwired/stimulus";
 import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
 
-// contract on goerli that i deployed 0x5CFE10e919EE71274c971512514C94BfA78C923a
-// new contract on golerli 0x4857CF33924d60614b144D11d5c22EeF766895D8
-const CONTRACT_ADDRESS = "0x4857CF33924d60614b144D11d5c22EeF766895D8";
+// constant for the contract address to interact with 
+const CONTRACT_ADDRESS = "0xc940271B721422572AcdDF797098F61dBd4BF3f3";
+
+// constant for the contract's ABI (Application Binary Interface) to interact with 
 const CONTRACT_ABI = abi.abi;
 
 // variables to store data
@@ -13,54 +14,61 @@ let userAddress = null;
 let userBalance = null;
 let provider = null;
 let contract = null;
-let transactions = [];
-let authorWalletAddress = "0x5FF047E05f8D0c7f2747F86F744d2B18df16F3D2";
-let senderWalletAddress = null;
-
 
 export default class extends Controller {
+  // these are the targets for the HTML elements used in the code
   static targets = [
     "connect",
     "wallet",
     "results",
     "form",
     "address",
-    "authorWalletAddress",
-    "senderWalletAddress",
     "balance",
-    "message",
     "price",
     "notification",
     "transactionTemplate",
     "withdraw",
+    "profileAddress",
   ];
 
+  // method that triggers when the connect button is clicked
   connect() {
     this.isWalletConnected();
   }
 
+  // method to check if a wallet (e.g. Metamask) is connected
   async isWalletConnected() {
+    // check if the window has an `ethereum` object
     if (window.ethereum) {
+      // use the `eth_accounts` method to get the user's accounts from the connected wallet
       const accounts = await window.ethereum.request({
         method: "eth_accounts",
       });
+      // call the `syncComponents` method to sync the data with the HTML components
       this.syncComponents(accounts);
     } 
   }
   
+  // method to connect to Metamask
   async connectMetamask() {
+    // check if the window has an `ethereum` object
     if (window.ethereum) {
+      // use the `eth_requestAccounts` method to request the user's accounts from the connected wallet
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
+      // call the `syncComponents` method to sync the data with the HTML components
       this.syncComponents(accounts);
     } else {
       console.log("Please install Metamask");
     }
   }
 
+  // method to set up the contract to interact with
   async setupContract() {
+    // check if a wallet is connected and a provider is available
     if (walletConnected && provider) {
+      // create a new instance of the `Contract` class from the `ethers` library
       contract = new ethers.Contract(
         CONTRACT_ADDRESS,
         CONTRACT_ABI,
@@ -71,9 +79,12 @@ export default class extends Controller {
     }
   }
 
+  // method to sync data with the HTML components
   async syncComponents(accounts) {
+    // create a new instance of the `Web3Provider` class from the
     provider = new ethers.providers.Web3Provider(window.ethereum);
 
+    // check if the user has connected a wallet
     if (accounts.length > 0) {
       walletConnected = true;
       userAddress = accounts[0];
@@ -96,10 +107,6 @@ export default class extends Controller {
       console.log("your balance is: " + userBalance + " ETH")
 
       await this.setupContract();
-      
-      // Fetch all cofee in the blockchain by author
-
-
 
       // metamask event: reload page if account changes
       window.ethereum.on("accountsChanged", (accounts) => {
@@ -119,6 +126,7 @@ export default class extends Controller {
     }
   }
 
+  // method to show a notification
   async showNotification(title, message) {
     const item = this.notificationTarget;
     item.querySelector(".type").innerText = title;
@@ -126,25 +134,19 @@ export default class extends Controller {
     this.notificationTarget.hidden = false;
   }
 
+  // method to buy coffee with ETH
   async buyCoffee() {
     try {
-      const authorWalletAddress = this.authorWalletAddress;
-      const senderWalletAddress = this.senderWalletAddress;
-      const amount = this.amount;
-      const timestamp = this.timestamp;
-      const message = this.messageTarget.value;
+      const profileAddress = this.profileAddressTarget.value;
+      const eth_price = this.priceTarget.innerText;
+
+
       // execute transaction
       const transaction = await contract.buymeacoffee(
-        authorWalletAddress, 
-        senderWalletAddress ? senderWalletAddress : userAddress, 
-        amount, 
-        timestamp, 
-        message ? message : "Enjoy your coffee!"
+        profileAddress, 
+        { value: ethers.utils.parseEther(eth_price) }
         );
 
-      // set sender wallet address to user address
-      this.senderWalletAddress = userAddress;
-  
       // Disable form
       this.formTarget.classList.add("pointer-events-none");
   
@@ -164,83 +166,5 @@ export default class extends Controller {
       alert("Transaction failed!");
     }
   }
-  
-
-  async getAllCoffee() {
-    try {
-      transactions = await contract.getAllCoffees();
-      console.log(transactions);
-
-      this.resultsTarget.innerText = "";
-      transactions
-        .slice(0)
-        .reverse()
-        .map((txn) => {
-          this.addResultItem(txn);
-        });
-    } catch (error) {
-      console.log(error.message);
-    }
-  }
-
-  async getContractBalance() {
-    try {
-      let contractBalance = await contract.getBalance();
-      contractBalance = ethers.utils.formatEther(contractBalance);
-      contractBalance = Math.round(contractBalance * 10000) / 10000;
-
-      // console.log("Contract's balance: ", contractBalance);
-
-      if (contractBalance > 0) {
-        this.withdrawTarget.innerText = `Withdraw ${contractBalance} ETH`;
-      } else {
-        this.withdrawTarget.disabled = true;
-        this.withdrawTarget.innerText = "No fund to withdraw";
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async withdraw() {
-    try {
-      const transaction = await contract.withdraw();
-
-      // Disable the withdraw button
-      // ...
-
-      // Show notification
-      this.showNotification("Transferring fund...", "Please be patience!");
-      console.log("Transferring...", transaction.hash);
-
-      await transaction.wait();
-
-      // Reload the page
-      window.location.reload();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  addResultItem(txn) {
-    const item =
-      this.transactionTemplateTarget.content.firstElementChild.cloneNode(true);
-
-    const tx_eth = ethers.utils.formatEther(txn.amount);
-    const tx_address = `${txn.supporter.slice(0, 6)}...${txn.supporter.slice(
-      -3
-    )}`.toUpperCase();
-    const tx_date = new Date(txn.timestamp.toNumber() * 1000).toLocaleString(
-      "en-US"
-    );
-
-    item.querySelector(".message").innerText = txn.message;
-    item.querySelector(".price").innerText = `supported ${tx_eth} ETH`;
-    item.querySelector(".address").innerText = tx_address;
-    item.querySelector(".timestamp").innerText = tx_date;
-
-    this.resultsTarget.append(item);
-  }
-
 
 }
