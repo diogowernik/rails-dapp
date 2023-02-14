@@ -14,13 +14,14 @@ let userAddress = null;
 let userBalance = null;
 let provider = null;
 let contract = null;
+let transactions = [];
 
 export default class extends Controller {
   // these are the targets for the HTML elements used in the code
   static targets = [
     "connect",
     "wallet",
-    "results",
+    // "results",
     "form",
     "address",
     "balance",
@@ -75,6 +76,7 @@ export default class extends Controller {
         provider.getSigner()
       );
 
+
       console.log("Contract is set up successfully", contract);
     }
   }
@@ -93,7 +95,7 @@ export default class extends Controller {
       this.connectTarget.hidden = true;
       // show elements
       this.walletTarget.hidden = false;
-      this.resultsTarget.hidden = false;
+      // this.resultsTarget.hidden = false;
       this.formTarget.hidden = false;
 
       this.addressTarget.innerText = `${userAddress.slice(
@@ -106,12 +108,19 @@ export default class extends Controller {
       this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
       console.log("your balance is: " + userBalance + " ETH")
 
+      // get all coffee transactions
+      await this.getAllCoffee();
+      await this.getContractBalance();
+
+
       await this.setupContract();
 
       // metamask event: reload page if account changes
       window.ethereum.on("accountsChanged", (accounts) => {
         window.location.reload();
       });
+
+
 
     } else {
       walletConnected = false;
@@ -120,7 +129,7 @@ export default class extends Controller {
       this.connectTarget.hidden = false;
       // hide elements
       this.walletTarget.hidden = true;
-      this.resultsTarget.hidden = true;
+      // this.resultsTarget.hidden = true;
       this.formTarget.hidden = true;
       this.addressTarget.innerText = "";
     }
@@ -166,5 +175,66 @@ export default class extends Controller {
       alert("Transaction failed!");
     }
   }
+
+
+  async getAllCoffee() {
+    try {
+      transactions = await contract.getAllCoffee();
+      console.log(transactions);
+
+      this.resultsTarget.innerText = "";
+      transactions
+        .slice(0)
+        .reverse()
+        .map((txn) => {
+          this.addResultItem(txn);
+        });
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  async getContractBalance() {
+    try {
+      let contractBalance = await contract.getContractBalance();
+      contractBalance = ethers.utils.formatEther(contractBalance);
+      contractBalance = Math.round(contractBalance * 10000) / 10000;
+
+      console.log("Contract's balance: ", contractBalance);
+
+      if (contractBalance > 0) {
+        this.withdrawTarget.innerText = `Withdraw ${contractBalance} ETH`;
+      } else {
+        this.withdrawTarget.disabled = true;
+        this.withdrawTarget.innerText = "No fund to withdraw";
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+
+  addResultItem(txn) {
+    const item =
+      this.transactionTemplateTarget.content.firstElementChild.cloneNode(true);
+
+    const tx_eth = ethers.utils.formatEther(txn.amount);
+    const tx_address = `${txn.supporter.slice(0, 6)}...${txn.supporter.slice(
+      -3
+    )}`.toUpperCase();
+    const tx_date = new Date(txn.timestamp.toNumber() * 1000).toLocaleString(
+      "en-US"
+    );
+
+    item.querySelector(".supporter").innerText = txn.name;
+    item.querySelector(".message").innerText = txn.message;
+    item.querySelector(".price").innerText = `supported ${tx_eth} ETH`;
+    item.querySelector(".address").innerText = tx_address;
+    item.querySelector(".timestamp").innerText = tx_date;
+
+    // this.resultsTarget.append(item);
+  }
+
+  
 
 }

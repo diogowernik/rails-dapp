@@ -34,12 +34,12 @@
           <label @click="price=0.005" for="opt3" class="coffee-choice">5</label>
         </div>
       </div>
-      <!-- Input: profileAdress = @author.wallet_address -->
+      <!-- Input: profileAdress = @profile.wallet_address -->
       <input 
         data-metamask-target="profileAddress"
         type="hidden"   
         name="profileAddress" 
-        value="<%= @author.wallet_address %>"
+        value="<%= @profile.wallet_address %>"
       >
       <!-- Button: Support -->
       <button data-action="metamask#buyCoffee" class="btn btn-support">
