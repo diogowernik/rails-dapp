@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
 
 // constant for the contract address to interact with 
+// link to contract: https://goerli.etherscan.io/address/0xc940271b721422572acddf797098f61dbd4bf3f3
 const CONTRACT_ADDRESS = "0xc940271B721422572AcdDF797098F61dBd4BF3f3";
 
 // constant for the contract's ABI (Application Binary Interface) to interact with 
@@ -112,19 +113,23 @@ export default class extends Controller {
       // Set up smart contract
       await this.setupContract();
 
-      // check if the user is the owner 
+      // get the wallet address from the HTML element stored in rails database
       const walletAddress = this.walletAddressTarget.innerText.replace(/\n/g, "");
-      isOwner = userAddress.toLowerCase() === walletAddress.toLowerCase();
-      console.log("user address: " + userAddress)
-      console.log("wallet address: " + walletAddress)
 
+      // check if the user is the owner
+      isOwner = userAddress.toLowerCase() === walletAddress.toLowerCase();
       console.log("is owner: " + isOwner)
+
+      // show withdraw button if user is owner
       if (isOwner) {
         this.withdrawTarget.hidden = false;
       }
 
-      // get the profile wallet address from the HTML element that was added by user in the profile page and stored in the database
+      // get profile coffees
       this.getProfileCoffees(walletAddress);
+
+      // get profile balance
+      this.getProfileBalance(walletAddress);
 
       // metamask event: reload page if account changes
       window.ethereum.on("accountsChanged", (accounts) => {
@@ -186,27 +191,48 @@ export default class extends Controller {
     }
   }
 
-  async getContractBalance() {
+  // method to show the profile balance and the value of the withdraw button
+  async getProfileBalance(walletAddress) {
     try {
-      let contractBalance = await contract.getBalance();
-      contractBalance = ethers.utils.formatEther(contractBalance);
-      contractBalance = Math.round(contractBalance * 10000) / 10000;
+      let profileBalance = await contract.getProfileBalance(walletAddress);
+      profileBalance = ethers.utils.formatEther(profileBalance);
+      profileBalance = Math.round(profileBalance * 10000) / 10000;
+      // console.log("Profile's balance: ", profileBalance);
 
-      // console.log("Contract's balance: ", contractBalance);
-
-      if (contractBalance > 0) {
-        this.withdrawTarget.innerText = `Withdraw ${contractBalance} ETH`;
+      if (profileBalance > 0) {
+        this.withdrawTarget.innerText = `Withdraw ${profileBalance} ETH`;
       } else {
         this.withdrawTarget.disabled = true;
         this.withdrawTarget.innerText = "No fund to withdraw";
       }
+      return profileBalance;
     } catch (error) {
       console.log(error);
     }
   }
 
-  
+  // method to withdraw the profile balance
+  async withdraw() {
+    try {
+      const transaction = await contract.withdrawProfileBalance()
+      // Disable button
+      this.withdrawTarget.classList.add("pointer-events-none");
+      // Show notification
+      this.showNotification("Processing...", "We are almost there.");
+      // console.log("Processing...", transaction.hash);
+      await transaction.wait();
+      // alert("Transaction successful!");
+      this.showNotification("Success", "Your funds have been withdrawn!");
+      // reload the whole page
+      window.location.reload();
+    }
+    catch (error) {
+      console.log(error);
+      alert("Transaction failed!");
+    }
+  }
 
+  // Get profile coffees and display them as messages on the page
   async getProfileCoffees(walletAddress) {
     try {
       transactions = await contract.getCoffeeByProfile(walletAddress);
@@ -225,6 +251,7 @@ export default class extends Controller {
       }
     }
 
+  // Coffee template get each transaction and display it on the page
   addResultItem(txn) {
     const item =
       this.transactionTemplateTarget.content.firstElementChild.cloneNode(true);
