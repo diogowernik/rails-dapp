@@ -15,6 +15,7 @@ let userBalance = null;
 let provider = null;
 let contract = null;
 let transactions = [];
+let isOwner = false;
 
 export default class extends Controller {
   // these are the targets for the HTML elements used in the code
@@ -30,6 +31,7 @@ export default class extends Controller {
     "transactionTemplate",
     "withdraw",
     "profileAddress",
+    "walletAddress",
   ];
 
   // method that triggers when the connect button is clicked
@@ -91,30 +93,38 @@ export default class extends Controller {
       walletConnected = true;
       userAddress = accounts[0];
       console.log("your account address is: " + accounts[0]);
-      // hide connect button
+
+      // Hide connect Metamask button
       this.connectTarget.hidden = true;
-      // show elements
+
+      // Show Elements
       this.walletTarget.hidden = false;
       this.resultsTarget.hidden = false;
       this.formTarget.hidden = false;
 
-      this.addressTarget.innerText = `${userAddress.slice(
-        0,
-        6
-      )}...${userAddress.slice(-3)}`.toUpperCase(); 
+      this.addressTarget.innerText = `${userAddress.slice( 0, 6)}...${userAddress.slice(-3)}`.toUpperCase(); 
       
       userBalance = await provider.getBalance(userAddress);
       userBalance = ethers.utils.formatEther(userBalance);
       this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
       console.log("your balance is: " + userBalance + " ETH")
 
+      // Set up smart contract
       await this.setupContract();
 
-      // get all coffee transactions
-      transactions = await contract.getAllCoffee();
-      console.log(transactions);
+      // check if the user is the owner 
+      const walletAddress = this.walletAddressTarget.innerText.replace(/\n/g, "");
+      isOwner = userAddress.toLowerCase() === walletAddress.toLowerCase();
+      console.log("user address: " + userAddress)
+      console.log("wallet address: " + walletAddress)
 
-     
+      console.log("is owner: " + isOwner)
+      if (isOwner) {
+        this.withdrawTarget.hidden = false;
+      }
+
+      // get the profile wallet address from the HTML element that was added by user in the profile page and stored in the database
+      this.getProfileCoffees(walletAddress);
 
       // metamask event: reload page if account changes
       window.ethereum.on("accountsChanged", (accounts) => {
@@ -146,6 +156,7 @@ export default class extends Controller {
   async buyCoffee() {
     try {
       const profileAddress = this.profileAddressTarget.value;
+      console.log(profileAddress)
       const eth_price = this.priceTarget.innerText;
 
 
@@ -175,24 +186,6 @@ export default class extends Controller {
     }
   }
 
-
-  async getAllCoffee() {
-    try {
-      transactions = await contract.getAllCoffee();
-      console.log(transactions);
-
-      this.resultsTarget.innerText = "";
-      transactions
-        .slice(0)
-        .reverse()
-        .map((txn) => {
-          this.addResultItem(txn);
-        });
-    } catch (error) {
-      console.log(error.message);
-    }
-  }
-
   async getContractBalance() {
     try {
       let contractBalance = await contract.getBalance();
@@ -212,6 +205,25 @@ export default class extends Controller {
     }
   }
 
+  
+
+  async getProfileCoffees(walletAddress) {
+    try {
+      transactions = await contract.getCoffeeByProfile(walletAddress);
+      console.log(transactions);
+
+      this.resultsTarget.innerText = "";
+      transactions
+        .slice(0)
+        .reverse()
+        .map((txn) => {
+          this.addResultItem(txn);
+        });
+      }
+      catch (error) {
+        console.log(error);
+      }
+    }
 
   addResultItem(txn) {
     const item =
@@ -233,7 +245,4 @@ export default class extends Controller {
 
     this.resultsTarget.append(item);
   }
-
-  
-
 }
