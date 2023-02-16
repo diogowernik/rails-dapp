@@ -4,8 +4,8 @@ import abi from "../contract.json" assert { type: "json" };
 
 
 // constant for the contract address to interact with 
-// link to contract: https://goerli.etherscan.io/address/0xc940271b721422572acddf797098f61dbd4bf3f3
-const CONTRACT_ADDRESS = "0xc940271B721422572AcdDF797098F61dBd4BF3f3";
+// link to contract: https://goerli.etherscan.io/address/0x1D66E23E7483A9Fa85dA47C3Bcc466F807014819
+const CONTRACT_ADDRESS = "0x1D66E23E7483A9Fa85dA47C3Bcc466F807014819";
 
 // constant for the contract's ABI (Application Binary Interface) to interact with 
 const CONTRACT_ABI = abi.abi;
@@ -34,6 +34,7 @@ export default class extends Controller {
     "withdraw",
     "profileAddress",
     "walletAddress",
+    "contractId",
   ];
 
   // method that triggers when the connect button is clicked
@@ -169,11 +170,14 @@ export default class extends Controller {
       const profileAddress = this.profileAddressTarget.value;
       // console.log(profileAddress)
       const eth_price = this.priceTarget.innerText;
+      // console.log(eth_price)
+      const contract_id = this.contractIdTarget.value;
 
 
       // execute transaction on the smart contract
       const transaction = await contract.buymeacoffee(
         profileAddress, 
+        contract_id,
         { value: ethers.utils.parseEther(eth_price) }
         );
 
@@ -184,14 +188,13 @@ export default class extends Controller {
           "Content-Type": "application/json",
           'X-CSRF-Token': this.csrfToken,
         },
-        // params.require(:coffee).permit(:author_id, :sender_wallet_address, :name, :amount, :timestamp, :message, :tx_hash)
         body: JSON.stringify({
           coffee: {
             profile_id: 1,
+            contract_id: contract_id,
             sender_wallet_address: userAddress,
             name: "Coffee",
             amount: eth_price,
-            timestamp: Date.now(),
             message: "Thank you for the coffee!",
             tx_hash: transaction.hash
           }
@@ -264,8 +267,33 @@ export default class extends Controller {
   // Get profile coffees and display them as messages on the page
   async getProfileCoffees(walletAddress) {
     try {
+      // get the transactions from the Rails database profile = 1 now is from all coffees has to create coffees by profile
+      const response = await fetch(`/coffees.json`);
+      const data = await response.json();
+
+      // get the transactions from the smart contract
       transactions = await contract.getCoffeeByProfile(walletAddress);
-      // console.log(transactions);
+      transactions = transactions.map((txn) => {
+        return {
+          profile: txn.profile,  // address
+          supporter: txn.supporter,  // address
+          amount: ethers.utils.formatEther(txn.amount),  // uint256
+          // to interger
+          contract_id: txn.contract_id.toNumber(),  // uint256
+        };
+      });
+
+    // merge the two arrays by contract_id
+    transactions = transactions.map((txn) => {
+        const coffee = data.find((coffee) => coffee.contract_id === txn.contract_id);
+        return {
+          ...txn,
+          name: coffee.name,
+          message: coffee.message,
+        };
+      });
+      console.log(transactions)
+
 
       this.resultsTarget.innerText = "";
       transactions
@@ -285,19 +313,19 @@ export default class extends Controller {
     const item =
       this.transactionTemplateTarget.content.firstElementChild.cloneNode(true);
 
-    const tx_eth = ethers.utils.formatEther(txn.amount);
+    const tx_eth = txn.amount;
     const tx_address = `${txn.supporter.slice(0, 6)}...${txn.supporter.slice(
       -3
     )}`.toUpperCase();
-    const tx_date = new Date(txn.timestamp.toNumber() * 1000).toLocaleString(
-      "en-US"
-    );
+    // const tx_date = new Date(txn.timestamp.toNumber() * 1000).toLocaleString(
+    //   "en-US"
+    // );
 
     item.querySelector(".supporter").innerText = txn.name;
     item.querySelector(".message").innerText = txn.message;
     item.querySelector(".price").innerText = `supported ${tx_eth} ETH`;
     item.querySelector(".address").innerText = tx_address;
-    item.querySelector(".timestamp").innerText = tx_date;
+    // item.querySelector(".timestamp").innerText = tx_date;
 
     this.resultsTarget.append(item);
   }

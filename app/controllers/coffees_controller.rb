@@ -22,6 +22,7 @@ class CoffeesController < ApplicationController
   # POST /coffees or /coffees.json
   def create
     @coffee = Coffee.new(coffee_params)
+    # create a contract_id like rails does for id
 
     respond_to do |format|
       if @coffee.save
@@ -65,6 +66,6 @@ class CoffeesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def coffee_params
-      params.require(:coffee).permit(:profile_id, :sender_wallet_address, :name, :amount, :timestamp, :message, :tx_hash)
+      params.require(:coffee).permit(:profile_id, :sender_wallet_address, :name, :amount, :contract_id, :message, :tx_hash)
     end
 end

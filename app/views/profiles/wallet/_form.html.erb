@@ -41,6 +41,17 @@
         name="profileAddress" 
         value="<%= @profile.wallet_address %>"
       >
+      <!-- Input: contractId = @coffee.contract_id = Coffee.last.contract_id + 1 -->
+      <input 
+        data-metamask-target="contractId"
+        type="hidden"   
+        name="contractId" 
+        <% if Coffee.last.nil? %>
+          value=1
+        <% else %>
+          value="<%= Coffee.last.contract_id + 1 %>"
+        <% end %>
+      >
       <!-- Button: Support -->
       <button data-action="metamask#buyCoffee" class="btn btn-support">
         Support <span data-metamask-target="price" x-text="price"></span> ETH
