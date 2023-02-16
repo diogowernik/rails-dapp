@@ -65,6 +65,6 @@ class CoffeesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def coffee_params
-      params.require(:coffee).permit(:author_id, :sender_wallet_address, :name, :amount, :timestamp, :message, :tx_hash)
+      params.require(:coffee).permit(:profile_id, :sender_wallet_address, :name, :amount, :timestamp, :message, :tx_hash)
     end
 end

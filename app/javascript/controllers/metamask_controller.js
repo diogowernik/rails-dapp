@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
 
+
 // constant for the contract address to interact with 
 // link to contract: https://goerli.etherscan.io/address/0xc940271b721422572acddf797098f61dbd4bf3f3
 const CONTRACT_ADDRESS = "0xc940271B721422572AcdDF797098F61dBd4BF3f3";
@@ -80,7 +81,7 @@ export default class extends Controller {
       );
 
 
-      console.log("Contract is set up successfully", contract);
+      // console.log("Contract is set up successfully", contract);
     }
   }
 
@@ -93,7 +94,7 @@ export default class extends Controller {
     if (accounts.length > 0) {
       walletConnected = true;
       userAddress = accounts[0];
-      console.log("your account address is: " + accounts[0]);
+      // console.log("your account address is: " + accounts[0]);
 
       // Hide connect Metamask button
       this.connectTarget.hidden = true;
@@ -108,7 +109,7 @@ export default class extends Controller {
       userBalance = await provider.getBalance(userAddress);
       userBalance = ethers.utils.formatEther(userBalance);
       this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
-      console.log("your balance is: " + userBalance + " ETH")
+      // console.log("your balance is: " + userBalance + " ETH")
 
       // Set up smart contract
       await this.setupContract();
@@ -118,7 +119,7 @@ export default class extends Controller {
 
       // check if the user is the owner
       isOwner = userAddress.toLowerCase() === walletAddress.toLowerCase();
-      console.log("is owner: " + isOwner)
+      // console.log("is owner: " + isOwner)
 
       // show withdraw button if user is owner
       if (isOwner) {
@@ -157,19 +158,46 @@ export default class extends Controller {
     this.notificationTarget.hidden = false;
   }
 
+  // get csrfToken from rails
+  get csrfToken() {
+    const metaTag = document.querySelector("meta[name='csrf-token']");
+    return metaTag ? metaTag.content : "";
+  }
   // method to buy coffee with ETH
   async buyCoffee() {
     try {
       const profileAddress = this.profileAddressTarget.value;
-      console.log(profileAddress)
+      // console.log(profileAddress)
       const eth_price = this.priceTarget.innerText;
 
 
-      // execute transaction
+      // execute transaction on the smart contract
       const transaction = await contract.buymeacoffee(
         profileAddress, 
         { value: ethers.utils.parseEther(eth_price) }
         );
+
+      // Save coffee to the Rails database if transaction is successful
+      const response = await fetch(`/coffees`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'X-CSRF-Token': this.csrfToken,
+        },
+        // params.require(:coffee).permit(:author_id, :sender_wallet_address, :name, :amount, :timestamp, :message, :tx_hash)
+        body: JSON.stringify({
+          coffee: {
+            profile_id: 1,
+            sender_wallet_address: userAddress,
+            name: "Coffee",
+            amount: eth_price,
+            timestamp: Date.now(),
+            message: "Thank you for the coffee!",
+            tx_hash: transaction.hash
+          }
+        }),
+      });
+      console.log(response)
 
       // Disable form
       this.formTarget.classList.add("pointer-events-none");
@@ -181,6 +209,7 @@ export default class extends Controller {
       await transaction.wait();
       // alert("Transaction successful!");
       this.showNotification("Success", "Your coffee is on its way!");
+      
   
       // reload the whole page
       window.location.reload();
@@ -236,7 +265,7 @@ export default class extends Controller {
   async getProfileCoffees(walletAddress) {
     try {
       transactions = await contract.getCoffeeByProfile(walletAddress);
-      console.log(transactions);
+      // console.log(transactions);
 
       this.resultsTarget.innerText = "";
       transactions
