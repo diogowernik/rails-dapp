@@ -2,18 +2,22 @@ import { Controller } from "@hotwired/stimulus";
 import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
 
-// Mapping networks to their respective contract addresses
-const networks = {
-  goerli: "0x1D66E23E7483A9Fa85dA47C3Bcc466F807014819",
-  mumbai: "0x0f2c1fe1d30927fd7096b7e10be61b99d7915fc7"
-};
+let networks = {};
+let currentNetwork = "goerli"; // padrão inicial
+let CONTRACT_ADDRESS;
+
+fetch('/networks_config')
+  .then(response => response.json())
+  .then(data => {
+    networks = data;
+    console.log(networks);
+    
+    CONTRACT_ADDRESS = networks[currentNetwork].contracts.buymecoffee.address;
+    // Outras operações que dependem de 'networks' podem ser feitas aqui dentro.
+  })
+  .catch(error => console.error('Erro ao carregar as configurações das redes:', error));
 
 
-// Initially setting the contract address to Goerli's address (or whichever you want as default)
-let CONTRACT_ADDRESS = networks.goerli;
-// let CONTRACT_ADDRESS = networks.mumbai;
-
-// constant for the contract's ABI (Application Binary Interface) to interact with 
 const CONTRACT_ABI = abi.abi;
 
 

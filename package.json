@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "yaml-loader": "^0.8.0"
+  }
+}

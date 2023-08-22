@@ -3,4 +3,5 @@ Rails.application.routes.draw do
   resources :coffees
   resources :authors
   root "wallets#index"
+  get 'networks_config', to: 'application#networks_config'
 end

@@ -1,10 +1,15 @@
 class ApplicationController < ActionController::Base
     before_action :load_networks
 
-    private
+    # private
 
     def load_networks
-    @networks = YAML.load_file(Rails.root.join('config', 'networks.yml'))
+        file_path = Rails.root.join('app', 'javascript', 'config', 'networks.json')
+        @networks = JSON.parse(File.read(file_path))
+    end
+    
+    def networks_config
+        render json: @networks
     end
 
 end
