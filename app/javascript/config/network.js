@@ -1,19 +1,27 @@
 // app/javascript/config/network.js
 
 let networks = {};
-let currentNetwork = "goerli"; 
-let CONTRACT_ADDRESS;
+let currentNetwork = "goerli"; // padrão inicial
 
-async function loadNetworks() {
-  try {
-    const response = await fetch('/networks_config');
-    networks = await response.json();
-    CONTRACT_ADDRESS = networks[currentNetwork].contracts.buymecoffee.address;
-    return networks;
-  } catch (error) {
-    console.error('Erro ao carregar as configurações das redes:', error);
-    return null;
-  }
+async function loadNetworkConfig() {
+    try {
+        const response = await fetch('/networks_config');
+        networks = await response.json();
+
+        return networks;
+    } catch (error) {
+        console.error('Erro ao carregar as configurações das redes:', error);
+        throw error;
+    }
 }
 
-export { loadNetworks, currentNetwork, CONTRACT_ADDRESS };
+function getCurrentContractAddress() {
+    if (networks[currentNetwork]) {
+        return networks[currentNetwork].contracts.buymecoffee.address;
+    }
+    return null;
+}
+
+export { loadNetworkConfig, getCurrentContractAddress };
+
+

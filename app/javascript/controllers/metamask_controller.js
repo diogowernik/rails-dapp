@@ -1,21 +1,18 @@
 import { Controller } from "@hotwired/stimulus";
 import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
+import { loadNetworkConfig, getCurrentContractAddress } from "../config/network";
 
-let networks = {};
-let currentNetwork = "goerli"; // padrão inicial
 let CONTRACT_ADDRESS;
 
-fetch('/networks_config')
-  .then(response => response.json())
-  .then(data => {
-    networks = data;
-    console.log(networks);
-    
-    CONTRACT_ADDRESS = networks[currentNetwork].contracts.buymecoffee.address;
-    // Outras operações que dependem de 'networks' podem ser feitas aqui dentro.
+loadNetworkConfig()
+  .then(config => {
+    console.log(config);  // Aqui estamos apenas registrando a configuração, não há necessidade de atribuir a 'networks'
+    CONTRACT_ADDRESS = getCurrentContractAddress();
   })
   .catch(error => console.error('Erro ao carregar as configurações das redes:', error));
+
+
 
 
 const CONTRACT_ABI = abi.abi;
