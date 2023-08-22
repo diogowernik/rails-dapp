@@ -9,11 +9,23 @@
             </span>
           </div>
           <!-- Wallet -->
+
+
           <div 
             hidden
             data-metamask-target="wallet"
           >
             <div class="flex items-center">
+            <!-- Network Dropdown -->
+              <select 
+                data-action="change->metamask#changeNetwork"
+                class="ml-2 bg-white px-3 py-1 rounded"
+              >
+                <% @networks.each do |networkKey, networkData| %>
+                  <option value="<%= networkKey %>"><%= networkData[:name] %></option>
+                <% end %>
+              </select>
+            
               <%=image_tag "ethereum.png", class: "mr-1 h-5 w5" %>
               <p 
                 data-metamask-target="balance"
@@ -25,6 +37,8 @@
                 class="mr-5 font-semibold text-slate-500"
               >
               </p>
+
+
             </div>
           </div>
         </div>

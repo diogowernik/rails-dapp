@@ -1,0 +1,22 @@
+goerli:
+  name: 'Goerli'
+  contracts:
+    buymecoffee: 
+      address: "0x1D66E23E7483A9Fa85dA47C3Bcc466F807014819"
+      # abi: ... # se você tiver ABIs diferentes para diferentes contratos
+    # anotherContract: 
+    #   address: "0xExampleAddressHere"
+    #   abi: ...
+
+mumbai:
+  name: 'Mumbai'
+  contracts:
+    buymecoffee: 
+      address: "0x0f2c1fe1d30927fd7096b7e10be61b99d7915fc7"
+      # abi: ...
+
+
+
+# links para verificar as interações com os contratos
+# https://goerli.etherscan.io/address/0x1D66E23E7483A9Fa85dA47C3Bcc466F807014819
+# https://mumbai.polygonscan.com/address/0x0f2c1fe1d30927fd7096b7e10be61b99d7915fc7
