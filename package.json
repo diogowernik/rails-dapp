@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "yaml-loader": "^0.8.0"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.3.3"
   }
 }
