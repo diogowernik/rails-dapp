@@ -1,15 +1,21 @@
 import { Controller } from "@hotwired/stimulus";
 import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
-const networksConfig = require("config/networks.yml");
-const networks = Object.keys(networksConfig);
+
+// Mapping networks to their respective contract addresses
+const networks = {
+  goerli: "0x1D66E23E7483A9Fa85dA47C3Bcc466F807014819",
+  mumbai: "0x0f2c1fe1d30927fd7096b7e10be61b99d7915fc7"
+};
 
 
-let currentNetwork = "goerli"; // padrão inicial
-let CONTRACT_ADDRESS = networks[currentNetwork];
+// Initially setting the contract address to Goerli's address (or whichever you want as default)
+let CONTRACT_ADDRESS = networks.goerli;
+// let CONTRACT_ADDRESS = networks.mumbai;
 
 // constant for the contract's ABI (Application Binary Interface) to interact with 
 const CONTRACT_ABI = abi.abi;
+
 
 // variables to store data
 let walletConnected = false;
@@ -43,20 +49,6 @@ export default class extends Controller {
     this.isWalletConnected();
   }
 
-  // method that changes the network
-  changeNetwork(event) {
-    const selectedNetwork = event.currentTarget.value;
-    const networkData = networks[selectedNetwork];
-    
-    if (networkData) {
-      CONTRACT_ADDRESS = networkData.contracts.buymecoffee.address;
-      currentNetwork = selectedNetwork;
-        this.connectToWallet();  // Por exemplo
-    } else {
-      console.error(`Network ${selectedNetwork} not supported`);
-    }
-  }
-  
   // method to check if a wallet (e.g. Metamask) is connected
   async isWalletConnected() {
     // check if the window has an `ethereum` object
