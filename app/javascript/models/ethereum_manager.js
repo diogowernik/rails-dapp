@@ -25,10 +25,13 @@ class EthereumManager {
             throw new Error("Contract address is not set.");
         }
         console.log("Contract Address:", this.CONTRACT_ADDRESS); 
+        return Promise.resolve(); // Adicione esta linha para resolver a promessa.
     } catch (error) {
         console.error('Erro ao carregar as configurações das redes:', error);
+        return Promise.reject(error); // Adicione esta linha para rejeitar a promessa.
     }
 }
+
 
 
   async connect() {
@@ -69,6 +72,11 @@ class EthereumManager {
   }
 
   async setupContract() {
+    if (!this.CONTRACT_ADDRESS) {
+        console.error("Contract address is not set up yet.");
+        return;
+      }
+  
     console.log("Setting up contract with address:", this.CONTRACT_ADDRESS);
 
     if (this.walletConnected && this.provider) {

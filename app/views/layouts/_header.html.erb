@@ -1,6 +1,7 @@
-    <header class="left-0 top-0 z50 bg-white/90 w-full shadow-md fixed">
-      <div class="mx-auto h-[60px] max-w-7xl">
-        <div class="flex justify-between items-center h-full border-b border-slate-500/10 px-5">
+  <header class="left-0 top-0 z-50 bg-white w-full shadow-md fixed">
+    <div class="mx-auto h-[60px] max-w-7xl">
+      <div class="flex justify-between items-center h-full border-b border-slate-500/10 px-5">
+
           <!-- Logo -->
           <div class="flex items-center">
             <%= image_tag "coffee.png", class: "w-[2rem]" %>
@@ -19,7 +20,7 @@
             <!-- Network Dropdown -->
               <select 
                   data-action="change->metamask#changeNetwork"
-                  class="ml-2 bg-white px-3 py-1 rounded"
+                  class="ml-2 mr-4 bg-white px-8 py-1 rounded"
               >
                   <% @networks.each do |networkKey, networkData| %>
                       <option value="<%= networkKey %>"><%= networkData['name'] %></option>

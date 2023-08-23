@@ -1,7 +1,7 @@
 // javascript/controllers/metamask_controller.js
 
 import { Controller } from "@hotwired/stimulus";
-import Profile from "../models/profile";
+import Profile from "../models/profile_manager";
 import EthereumManager from "../models/ethereum_manager";
 import { ethers } from "ethers";
 
@@ -30,12 +30,11 @@ export default class extends Controller {
     this.profileInstance = null;
 
     this.ethManager.initialized.then(() => {
-      // Chame outros métodos relacionados ao contrato depois que a inicialização estiver completa
       this.connect();
     }).catch(error => {
       console.error("Erro durante a inicialização:", error);
     });
-  }
+}
 
   connect() {
     if (this.ethManager.isConnected) {
