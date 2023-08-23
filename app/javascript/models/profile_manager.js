@@ -1,4 +1,4 @@
-// javascript/models/profile.js
+// javascript/models/profile_manager.js
 
 import { ethers } from "ethers";
 
