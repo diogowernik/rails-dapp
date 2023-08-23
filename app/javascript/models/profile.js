@@ -1,11 +1,29 @@
-async function fetchProfileCoffees() {
-    try {
-      const response = await fetch(`/coffees.json`);
-      return await response.json();
-    } catch (error) {
-      console.error('Erro ao buscar cafés do perfil:', error);
-      return null;
+// javascript/models/profile.js
+
+import { ethers } from "ethers";
+
+export default class Profile {
+    constructor(contract) {
+        this.contract = contract;
     }
-  }
-  
-  export { fetchProfileCoffees };
+
+    async getBalance(walletAddress) {
+        try {
+            let profileBalance = await this.contract.getProfileBalance(walletAddress);
+            return ethers.utils.formatEther(profileBalance);
+        } catch (error) {
+            console.error("Error getting profile balance:", error);
+            return null;
+        }
+    }
+
+    async getCoffees(walletAddress) {
+        try {
+            return await this.contract.getCoffeeByProfile(walletAddress);
+        } catch (error) {
+            console.error("Error getting profile coffees:", error);
+            return null;
+        }
+    }
+}
+

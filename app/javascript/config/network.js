@@ -16,11 +16,13 @@ async function loadNetworkConfig() {
 }
 
 function getCurrentContractAddress() {
-    if (networks[currentNetwork]) {
+    if (networks[currentNetwork] && networks[currentNetwork].contracts && networks[currentNetwork].contracts.buymecoffee) {
         return networks[currentNetwork].contracts.buymecoffee.address;
     }
+    console.error('Contract address not found in the network configuration.');
     return null;
 }
+
 
 export { loadNetworkConfig, getCurrentContractAddress };
 
