@@ -3,8 +3,8 @@
 import { Controller } from "@hotwired/stimulus";
 import Profile from "../models/profile";
 import EthereumManager from "../models/ethereum_manager";
+import UIManager from "../models/ui_manager";
 import { ethers } from "ethers";
-
 
 let profileInstance = null;
 
@@ -27,10 +27,10 @@ export default class extends Controller {
 
   initialize() {
     this.ethManager = new EthereumManager();
+    this.uiManager = new UIManager(this);  // Introduzindo UIManager
     this.profileInstance = null;
 
     this.ethManager.initialized.then(() => {
-      // Chame outros métodos relacionados ao contrato depois que a inicialização estiver completa
       this.connect();
     }).catch(error => {
       console.error("Erro durante a inicialização:", error);
@@ -39,63 +39,16 @@ export default class extends Controller {
 
   connect() {
     if (this.ethManager.isConnected) {
-      this.syncComponents();
+      this.uiManager.syncComponents();
     } else {
       this.ethManager.connectMetamask()
         .then(() => {
-          this.syncComponents();
+          this.uiManager.syncComponents();
         })
         .catch(error => {
           console.error('Erro ao conectar:', error);
         });
     }
-  }
-
-  syncComponents() {
-    if (this.ethManager.isConnected) {
-      this.connectTarget.hidden = true;
-      this.walletTarget.hidden = false;
-      this.resultsTarget.hidden = false;
-      this.formTarget.hidden = false;
-
-      const userAddress = this.ethManager.userAddress;
-
-      this.addressTarget.innerText = `${userAddress.slice(0, 6)}...${userAddress.slice(-3)}`.toUpperCase();
-
-      this.ethManager.provider.getBalance(userAddress).then(userBalance => {
-        userBalance = ethers.utils.formatEther(userBalance);
-        this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
-      });
-
-      const walletAddress = this.walletAddressTarget.innerText.replace(/\n/g, "");
-      const isOwner = userAddress.toLowerCase() === walletAddress.toLowerCase();
-
-      if (isOwner) {
-        this.withdrawTarget.hidden = false;
-      }
-
-      this.getProfileCoffees(walletAddress);
-      this.getProfileBalance(walletAddress);
-
-      window.ethereum.on("accountsChanged", (accounts) => {
-        window.location.reload();
-      });
-
-    } else {
-      console.log("wallet not connected");
-      this.connectTarget.hidden = false;
-      this.walletTarget.hidden = true;
-      this.resultsTarget.hidden = true;
-      this.formTarget.hidden = true;
-      this.addressTarget.innerText = "";
-    }
-  }
-
-  async showNotification(title, message) {
-    const item = this.notificationTarget;
-    item.querySelector(".type").innerText = title;
-    item.querySelector(".message").innerText = message;
-    this.notificationTarget.hidden = false;
   }
 
   get csrfToken() {
@@ -134,11 +87,11 @@ export default class extends Controller {
         }),
       });
 
-      this.formTarget.classList.add("pointer-events-none");
-      this.showNotification("Processing...", "We are almost there.");
+      this.uiManager.setPointerEventsNone("formTarget");
+      this.uiManager.showNotification("Processing...", "We are almost there.");
 
       await transaction.wait();
-      this.showNotification("Success", "Your coffee is on its way!");
+      this.uiManager.showNotification("Success", "Your coffee is on its way!");
       window.location.reload();
 
     } catch (error) {
@@ -151,14 +104,7 @@ export default class extends Controller {
     try {
       if (!profileInstance) profileInstance = new Profile(this.ethManager.contract);
       let profileBalance = await profileInstance.getBalance(walletAddress);
-      profileBalance = Math.round(profileBalance * 10000) / 10000;
-
-      if (profileBalance > 0) {
-        this.withdrawTarget.innerText = `Withdraw ${profileBalance} ETH`;
-      } else {
-        this.withdrawTarget.disabled = true;
-        this.withdrawTarget.innerText = "No fund to withdraw";
-      }
+      this.uiManager.updateWithdrawButton(profileBalance);  // Using UIManager
 
     } catch (error) {
       console.log(error);
@@ -168,10 +114,10 @@ export default class extends Controller {
   async withdraw() {
     try {
       const transaction = await this.ethManager.contract.withdrawProfileBalance();
-      this.withdrawTarget.classList.add("pointer-events-none");
-      this.showNotification("Processing...", "We are almost there.");
+      this.uiManager.setPointerEventsNone("withdrawTarget");
+      this.uiManager.showNotification("Processing...", "We are almost there.");
       await transaction.wait();
-      this.showNotification("Success", "Your funds have been withdrawn!");
+      this.uiManager.showNotification("Success", "Your funds have been withdrawn!");
       window.location.reload();
 
     } catch (error) {
@@ -186,14 +132,13 @@ export default class extends Controller {
       const response = await fetch(`/coffees.json`);
       const data = await response.json();
 
-      let transactions = await profileInstance.getCoffees(walletAddress); // Use 'let' aqui
+      let transactions = await profileInstance.getCoffees(walletAddress);
       transactions = transactions.map((txn) => {
         return {
-          profile: txn.profile,  // address
-          supporter: txn.supporter,  // address
-          amount: ethers.utils.formatEther(txn.amount),  // uint256
-          // to interger
-          contract_id: txn.contract_id.toNumber(),  // uint256
+          profile: txn.profile,
+          supporter: txn.supporter,
+          amount: ethers.utils.formatEther(txn.amount),
+          contract_id: txn.contract_id.toNumber(),
         };
       });
 
@@ -205,36 +150,17 @@ export default class extends Controller {
           message: coffee.message,
         };
       });
-      console.log(transactions)
 
-      this.resultsTarget.innerText = "";
+      console.log(transactions);
+      this.uiManager.clearResults();
       transactions
         .slice(0)
         .reverse()
         .map((txn) => {
-          this.addResultItem(txn);
+          this.uiManager.addResultItem(txn);
         });
     } catch (error) {
-        console.log(error); // metamask 220
+      console.log(error);
     }
-}
-
-
-  addResultItem(txn) {
-    const item =
-      this.transactionTemplateTarget.content.firstElementChild.cloneNode(true);
-
-    const tx_eth = txn.amount;
-    const tx_address = `${txn.supporter.slice(0, 6)}...${txn.supporter.slice(
-      -3
-    )}`.toUpperCase();
-
-
-    item.querySelector(".supporter").innerText = txn.name;
-    item.querySelector(".message").innerText = txn.message;
-    item.querySelector(".price").innerText = `supported ${tx_eth} ETH`;
-    item.querySelector(".address").innerText = tx_address;
-
-    this.resultsTarget.append(item);
   }
 }
