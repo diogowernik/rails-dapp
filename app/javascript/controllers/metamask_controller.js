@@ -3,11 +3,11 @@
 import { Controller } from "@hotwired/stimulus";
 import { ethers } from "ethers";
 
-import Profile from "../models/profile_manager";
 import EthereumManager from "../models/ethereum_manager";
-import TransactionManager from "../models/transaction_manager";
-
-let profileInstance = null;
+import NotificationManager from "../models/notification_manager";
+import WalletManager from "../models/wallet_manager";
+import ProfileBalanceManager from "../models/profile_balance";
+import ProfileCoffeesManager from "../models/profile_coffees";
 
 export default class extends Controller {
   static targets = [
@@ -28,23 +28,57 @@ export default class extends Controller {
 
   initialize() {
     this.ethManager = new EthereumManager();
-    this.transactionManager = new TransactionManager(this.ethManager);
-    this.profileInstance = null;
+
+    this.notificationManager = new NotificationManager(this.notificationTarget);
+
+    this.walletManager = new WalletManager(this.ethManager, {
+      connectTarget: this.connectTarget,
+      walletTarget: this.walletTarget,
+      resultsTarget: this.resultsTarget,
+      formTarget: this.formTarget,
+      addressTarget: this.addressTarget,
+      balanceTarget: this.balanceTarget,
+      walletAddressTarget: this.walletAddressTarget,
+      withdrawTarget: this.withdrawTarget
+    }, this); 
+
+    this.setupMetaMaskListeners();
 
     this.ethManager.initialized.then(() => {
       this.connect();
     }).catch(error => {
       console.error("Erro durante a inicialização:", error);
     });
+
+    this.profileCoffeesManager = new ProfileCoffeesManager(this.ethManager);
+    this.profileBalanceManager = new ProfileBalanceManager(this.ethManager);
+
+    
+  }
+
+  setupMetaMaskListeners() {
+    // Quando a conta no MetaMask muda
+    window.ethereum.on('accountsChanged', (accounts) => {
+      console.log("Conta do MetaMask mudou:", accounts);
+      // Aqui, reconectamos e sincronizamos componentes.
+      this.connect();
+    });
+
+    // Quando a rede no MetaMask muda
+    window.ethereum.on('chainChanged', () => {
+      console.log("Rede do MetaMask mudou");
+      // Uma abordagem direta é simplesmente recarregar a página para começar de um estado limpo.
+      window.location.reload();
+    });
   }
 
   connect() {
     if (this.ethManager.isConnected) {
-      this.syncComponents();
+      this.walletManager.syncComponents();
     } else {
       this.ethManager.connectMetamask()
         .then(() => {
-          this.syncComponents();
+          this.walletManager.syncComponents();
         })
         .catch(error => {
           console.error('Erro ao conectar:', error);
@@ -52,51 +86,8 @@ export default class extends Controller {
     }
   }
 
-  syncComponents() {
-    if (this.ethManager.isConnected) {
-      this.connectTarget.hidden = true;
-      this.walletTarget.hidden = false;
-      this.resultsTarget.hidden = false;
-      this.formTarget.hidden = false;
-
-      const userAddress = this.ethManager.userAddress;
-
-      this.addressTarget.innerText = `${userAddress.slice(0, 6)}...${userAddress.slice(-3)}`.toUpperCase();
-
-      this.ethManager.provider.getBalance(userAddress).then(userBalance => {
-        userBalance = ethers.utils.formatEther(userBalance);
-        this.balanceTarget.innerText = Math.round(userBalance * 10000) / 10000;
-      });
-
-      const walletAddress = this.walletAddressTarget.innerText.replace(/\n/g, "");
-      const isOwner = userAddress.toLowerCase() === walletAddress.toLowerCase();
-
-      if (isOwner) {
-        this.withdrawTarget.hidden = false;
-      }
-
-      this.getProfileCoffees(walletAddress);
-      this.getProfileBalance(walletAddress);
-
-      window.ethereum.on("accountsChanged", (accounts) => {
-        window.location.reload();
-      });
-
-    } else {
-      console.log("wallet not connected");
-      this.connectTarget.hidden = false;
-      this.walletTarget.hidden = true;
-      this.resultsTarget.hidden = true;
-      this.formTarget.hidden = true;
-      this.addressTarget.innerText = "";
-    }
-  }
-
   async showNotification(title, message) {
-    const item = this.notificationTarget;
-    item.querySelector(".type").innerText = title;
-    item.querySelector(".message").innerText = message;
-    this.notificationTarget.hidden = false;
+    this.notificationManager.showNotification(title, message);
   }
 
   get csrfToken() {
@@ -116,7 +107,24 @@ export default class extends Controller {
         { value: ethers.utils.parseEther(eth_price) }
       );
 
-      await this.transactionManager.recordTransaction(profileAddress, contract_id, eth_price, transaction.hash);
+      const response = await fetch(`/coffees`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'X-CSRF-Token': this.csrfToken,
+        },
+        body: JSON.stringify({
+          coffee: {
+            profile_id: 1,
+            contract_id: contract_id,
+            sender_wallet_address: this.ethManager.userAddress,
+            name: "Coffee",
+            amount: eth_price,
+            message: "Thank you for the coffee!",
+            tx_hash: transaction.hash
+          }
+        }),
+      });
 
       this.formTarget.classList.add("pointer-events-none");
       this.showNotification("Processing...", "We are almost there.");
@@ -128,24 +136,6 @@ export default class extends Controller {
     } catch (error) {
       console.log(error);
       alert("Transaction failed!");
-    }
-  }
-
-  async getProfileBalance(walletAddress) {
-    try {
-      if (!profileInstance) profileInstance = new Profile(this.ethManager.contract);
-      let profileBalance = await profileInstance.getBalance(walletAddress);
-      profileBalance = Math.round(profileBalance * 10000) / 10000;
-
-      if (profileBalance > 0) {
-        this.withdrawTarget.innerText = `Withdraw ${profileBalance} ETH`;
-      } else {
-        this.withdrawTarget.disabled = true;
-        this.withdrawTarget.innerText = "No fund to withdraw";
-      }
-
-    } catch (error) {
-      console.log(error);
     }
   }
 
@@ -164,44 +154,37 @@ export default class extends Controller {
     }
   }
 
-  // No método getProfileCoffees, a parte de buscar as transações pode ser atualizada.
+  // Lista de coffees, doações recebidas pelo perfil
   async getProfileCoffees(walletAddress) {
     try {
-      const data = await this.transactionManager.getTransactionsForWallet(walletAddress);
-
-      let transactions = await profileInstance.getCoffees(walletAddress); 
-
-      transactions = transactions.map((txn) => {
-        return {
-          profile: txn.profile,  
-          supporter: txn.supporter,  
-          amount: ethers.utils.formatEther(txn.amount),  
-          contract_id: txn.contract_id.toNumber(),  
-        };
-      });
-
-      transactions = transactions.map((txn) => {
-        const coffee = data.find((coffee) => coffee.contract_id === txn.contract_id);
-        return {
-          ...txn,
-          name: coffee.name,
-          message: coffee.message,
-        };
-      });
-      console.log(transactions)
-
-      this.resultsTarget.innerText = "";
-      transactions
-        .slice(0)
-        .reverse()
-        .map((txn) => {
-          this.addResultItem(txn);
-        });
+        const transactions = await this.profileCoffeesManager.getCoffees(walletAddress);
+        this.resultsTarget.innerText = "";
+        transactions
+            .slice(0)
+            .reverse()
+            .map((txn) => {
+                this.addResultItem(txn);
+            });
     } catch (error) {
         console.log(error); 
     }
   }
 
+  // Saldo do perfil
+  async getProfileBalance(walletAddress) {
+    try {
+        const profileBalance = await this.profileBalanceManager.getBalance(walletAddress);
+        if (profileBalance > 0) {
+            this.withdrawTarget.innerText = `Withdraw ${profileBalance} ETH`;
+        } else {
+            this.withdrawTarget.disabled = true;
+            this.withdrawTarget.innerText = "No fund to withdraw";
+        }
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   addResultItem(txn) {
     const item =

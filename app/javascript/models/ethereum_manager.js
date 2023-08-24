@@ -3,6 +3,7 @@
 import { ethers } from "ethers";
 import abi from "../contract.json" assert { type: "json" };
 import { loadNetworkConfig, getCurrentContractAddress } from "../config/network";
+import Profile from "./profile_manager";
 
 class EthereumManager {
   constructor() {
@@ -31,7 +32,6 @@ class EthereumManager {
         return Promise.reject(error); // Adicione esta linha para rejeitar a promessa.
     }
 }
-
 
 
   async connect() {
@@ -85,6 +85,7 @@ class EthereumManager {
         this.CONTRACT_ABI,
         this.provider.getSigner()
       );
+      this.profileInstance = new Profile(this.contract);
     }
   }
 
