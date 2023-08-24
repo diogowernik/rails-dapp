@@ -1,10 +1,11 @@
 // javascript/controllers/metamask_controller.js
 
 import { Controller } from "@hotwired/stimulus";
-import Profile from "../models/profile_manager";
-import EthereumManager from "../models/ethereum_manager";
 import { ethers } from "ethers";
 
+import Profile from "../models/profile_manager";
+import EthereumManager from "../models/ethereum_manager";
+import TransactionManager from "../models/transaction_manager";
 
 let profileInstance = null;
 
@@ -27,6 +28,7 @@ export default class extends Controller {
 
   initialize() {
     this.ethManager = new EthereumManager();
+    this.transactionManager = new TransactionManager(this.ethManager);
     this.profileInstance = null;
 
     this.ethManager.initialized.then(() => {
@@ -34,7 +36,7 @@ export default class extends Controller {
     }).catch(error => {
       console.error("Erro durante a inicialização:", error);
     });
-}
+  }
 
   connect() {
     if (this.ethManager.isConnected) {
@@ -114,24 +116,7 @@ export default class extends Controller {
         { value: ethers.utils.parseEther(eth_price) }
       );
 
-      const response = await fetch(`/coffees`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'X-CSRF-Token': this.csrfToken,
-        },
-        body: JSON.stringify({
-          coffee: {
-            profile_id: 1,
-            contract_id: contract_id,
-            sender_wallet_address: this.ethManager.userAddress,
-            name: "Coffee",
-            amount: eth_price,
-            message: "Thank you for the coffee!",
-            tx_hash: transaction.hash
-          }
-        }),
-      });
+      await this.transactionManager.recordTransaction(profileAddress, contract_id, eth_price, transaction.hash);
 
       this.formTarget.classList.add("pointer-events-none");
       this.showNotification("Processing...", "We are almost there.");
@@ -179,20 +164,19 @@ export default class extends Controller {
     }
   }
 
-  // Get profile coffees and display them as messages on the page
+  // No método getProfileCoffees, a parte de buscar as transações pode ser atualizada.
   async getProfileCoffees(walletAddress) {
     try {
-      const response = await fetch(`/coffees.json`);
-      const data = await response.json();
+      const data = await this.transactionManager.getTransactionsForWallet(walletAddress);
 
-      let transactions = await profileInstance.getCoffees(walletAddress); // Use 'let' aqui
+      let transactions = await profileInstance.getCoffees(walletAddress); 
+
       transactions = transactions.map((txn) => {
         return {
-          profile: txn.profile,  // address
-          supporter: txn.supporter,  // address
-          amount: ethers.utils.formatEther(txn.amount),  // uint256
-          // to interger
-          contract_id: txn.contract_id.toNumber(),  // uint256
+          profile: txn.profile,  
+          supporter: txn.supporter,  
+          amount: ethers.utils.formatEther(txn.amount),  
+          contract_id: txn.contract_id.toNumber(),  
         };
       });
 
@@ -214,9 +198,9 @@ export default class extends Controller {
           this.addResultItem(txn);
         });
     } catch (error) {
-        console.log(error); // metamask 220
+        console.log(error); 
     }
-}
+  }
 
 
   addResultItem(txn) {
